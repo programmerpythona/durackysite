@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Волк и Яйца</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        #gameContainer {
+            background: #2a2a2a;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            max-width: 400px;
+            width: 100%;
+            border: 3px solid #444;
+        }
+
+        #gameScreen {
+            background: #9bbc0f;
+            border-radius: 10px;
+            padding: 10px;
+            position: relative;
+            height: 500px;
+            border: 2px solid #556b2f;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.3);
+        }
+
+        #score {
+            text-align: center;
+            font-size: 24px;
+            color: #2a2a2a;
+            margin-bottom: 10px;
+            font-weight: bold;
+            text-shadow: 1px 1px 0 #7a9c0f;
+        }
+
+        #gameArea {
+            position: relative;
+            height: 350px;
+            background: rgba(155, 188, 15, 0.3);
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .chicken {
+            position: absolute;
+            font-size: 40px;
+            transition: all 0.3s;
+        }
+
+        .chicken.left-top { top: 50px; left: 20px; }
+        .chicken.left-bottom { top: 150px; left: 20px; }
+        .chicken.right-top { top: 50px; right: 20px; }
+        .chicken.right-bottom { top: 150px; right: 20px; }
+
+        .egg {
+            position: absolute;
+            font-size: 25px;
+            animation: fall linear;
+            z-index: 10;
+        }
+
+        @keyframes fall {
+            from { transform: translateY(0); }
+            to { transform: translateY(250px); }
+        }
+
+        #wolf {
+            position: absolute;
+            bottom: 20px;
+            font-size: 50px;
+            transition: left 0.15s, transform 0.15s;
+            z-index: 20;
+        }
+
+        #basket {
+            position: absolute;
+            bottom: 15px;
+            font-size: 35px;
+            transition: left 0.15s;
+            z-index: 19;
+        }
+
+        #lives {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 20px;
+            color: #2a2a2a;
+            font-weight: bold;
+        }
+
+        #controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .control-btn {
+            flex: 1;
+            padding: 15px;
+            font-size: 30px;
+            background: #556b2f;
+            border: none;
+            border-radius: 10px;
+            color: #9bbc0f;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 5px 0 #3a4a1f;
+            touch-action: manipulation;
+        }
+
+        .control-btn:active {
+            transform: translateY(3px);
+            box-shadow: 0 2px 0 #3a4a1f;
+        }
+
+        .control-btn:hover {
+            background: #6a7d3f;
+        }
+
+        #gameOver, #startScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.9);
+            color: #9bbc0f;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border-radius: 10px;
+            z-index: 100;
+        }
+
+        #gameOver h2, #startScreen h2 {
+            font-size: 36px;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        #finalScore, #highScore {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        #restartBtn, #startBtn {
+            margin-top: 20px;
+            padding: 15px 40px;
+            font-size: 20px;
+            background: #556b2f;
+            border: none;
+            border-radius: 10px;
+            color: #9bbc0f;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+            box-shadow: 0 5px 0 #3a4a1f;
+        }
+
+        #restartBtn:hover, #startBtn:hover {
+            background: #6a7d3f;
+            transform: translateY(-2px);
+        }
+
+        #restartBtn:active, #startBtn:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 #3a4a1f;
+        }
+
+        .broken-egg {
+            position: absolute;
+            font-size: 30px;
+            animation: fadeOut 1s forwards;
+        }
+
+        @keyframes fadeOut {
+            to { opacity: 0; transform: scale(1.5); }
+        }
+
+        .catch-effect {
+            position: absolute;
+            font-size: 30px;
+            animation: catchAnim 0.5s forwards;
+            color: #ffd700;
+            font-weight: bold;
+            z-index: 30;
+        }
+
+        @keyframes catchAnim {
+            0% { transform: scale(1) translateY(0); opacity: 1; }
+            100% { transform: scale(1.5) translateY(-30px); opacity: 0; }
+        }
+
+        @media (max-height: 600px) {
+            #gameScreen { height: 400px; }
+            #gameArea { height: 280px; }
+            .control-btn { padding: 10px; }
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <div id="gameScreen">
+            <div id="score">Счёт: <span id="scoreValue">0</span></div>
+            <div id="lives">❤️❤️❤️</div>
+            <div id="gameArea">
+                <div class="chicken left-top">🐔</div>
+                <div class="chicken left-bottom">🐓</div>
+                <div class="chicken right-top">🐔</div>
+                <div class="chicken right-bottom">🐓</div>
+                <div id="wolf">🐺</div>
+                <div id="basket">🧺</div>
+                <div id="startScreen">
+                    <h2>🐺 Волк и Яйца 🥚</h2>
+                    <div style="text-align: center; margin: 20px;">
+                        <p>Лови яйца в корзину!</p>
+                        <p>Используй кнопки ← → ↑ ↓</p>
+                        <p>или WASD для управления</p>
+                    </div>
+                    <div id="highScore">Рекорд: <span id="highScoreValue">0</span></div>
+                    <button id="startBtn">НАЧАТЬ ИГРУ</button>
+                </div>
+                <div id="gameOver" style="display: none;">
+                    <h2>Игра окончена!</h2>
+                    <div id="finalScore">Ваш счёт: <span id="finalScoreValue">0</span></div>
+                    <div>Рекорд: <span id="finalHighScore">0</span></div>
+                    <button id="restartBtn">ИГРАТЬ СНОВА</button>
+                </div>
+            </div>
+            <div id="controls">
+                <button class="control-btn" data-pos="left-top">↖️</button>
+                <button class="control-btn" data-pos="right-top">↗️</button>
+                <button class="control-btn" data-pos="left-bottom">↙️</button>
+                <button class="control-btn" data-pos="right-bottom">↘️</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const game = {
+            score: 0,
+            lives: 3,
+            highScore: 0,
+            isPlaying: false,
+            wolfPosition: 'left-top',
+            eggs: [],
+            eggSpeed: 2000,
+            spawnRate: 2000,
+            level: 1,
+            positions: ['left-top', 'left-bottom', 'right-top', 'right-bottom'],
+            
+            init() {
+                this.highScore = parseInt(localStorage.getItem('wolfHighScore') || '0');
+                document.getElementById('highScoreValue').textContent = this.highScore;
+                document.getElementById('finalHighScore').textContent = this.highScore;
+                
+                this.setupEventListeners();
+                this.updateWolfPosition();
+            },
+            
+            setupEventListeners() {
+                // Кнопки управления
+                document.querySelectorAll('.control-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        if (this.isPlaying) {
+                            this.wolfPosition = e.target.dataset.pos;
+                            this.updateWolfPosition();
+                        }
+                    });
+                    
+                    // Touch events for mobile
+                    btn.addEventListener('touchstart', (e) => {
+                        e.preventDefault();
+                        if (this.isPlaying) {
+                            this.wolfPosition = e.target.dataset.pos;
+                            this.updateWolfPosition();
+                        }
+                    });
+                });
+                
+                // Клавиатура
+                document.addEventListener('keydown', (e) => {
+                    if (!this.isPlaying) return;
+                    
+                    switch(e.key.toLowerCase()) {
+                        case 'arrowleft':
+                        case 'a':
+                            this.wolfPosition = this.wolfPosition.includes('top') ? 'left-top' : 'left-bottom';
+                            break;
+                        case 'arrowright':
+                        case 'd':
+                            this.wolfPosition = this.wolfPosition.includes('top') ? 'right-top' : 'right-bottom';
+                            break;
+                        case 'arrowup':
+                        case 'w':
+                            this.wolfPosition = this.wolfPosition.includes('left') ? 'left-top' : 'right-top';
+                            break;
+                        case 'arrowdown':
+                        case 's':
+                            this.wolfPosition = this.wolfPosition.includes('left') ? 'left-bottom' : 'right-bottom';
+                            break;
+                    }
+                    this.updateWolfPosition();
+                });
+                
+                // Кнопки старта и рестарта
+                document.getElementById('startBtn').addEventListener('click', () => this.start());
+                document.getElementById('restartBtn').addEventListener('click', () => this.restart());
+            },
+            
+            updateWolfPosition() {
+                const wolf = document.getElementById('wolf');
+                const basket = document.getElementById('basket');
+                
+                let left, transform;
+                switch(this.wolfPosition) {
+                    case 'left-top':
+                        left = '70px';
+                        wolf.style.bottom = '170px';
+                        basket.style.bottom = '165px';
+                        transform = 'scaleX(1)';
+                        break;
+                    case 'left-bottom':
+                        left = '70px';
+                        wolf.style.bottom = '70px';
+                        basket.style.bottom = '65px';
+                        transform = 'scaleX(1)';
+                        break;
+                    case 'right-top':
+                        left = '280px';
+                        wolf.style.bottom = '170px';
+                        basket.style.bottom = '165px';
+                        transform = 'scaleX(-1)';
+                        break;
+                    case 'right-bottom':
+                        left = '280px';
+                        wolf.style.bottom = '70px';
+                        basket.style.bottom = '65px';
+                        transform = 'scaleX(-1)';
+                        break;
+                }
+                
+                wolf.style.left = left;
+                wolf.style.transform = transform;
+                basket.style.left = this.wolfPosition.includes('left') ? '110px' : '240px';
+            },
+            
+            start() {
+                document.getElementById('startScreen').style.display = 'none';
+                this.isPlaying = true;
+                this.score = 0;
+                this.lives = 3;
+                this.level = 1;
+                this.eggSpeed = 2000;
+                this.spawnRate = 2000;
+                this.updateUI();
+                this.spawnEgg();
+            },
+            
+            restart() {
+                document.getElementById('gameOver').style.display = 'none';
+                this.start();
+            },
+            
+            spawnEgg() {
+                if (!this.isPlaying) return;
+                
+                const position = this.positions[Math.floor(Math.random() * this.positions.length)];
+                const egg = document.createElement('div');
+                egg.className = 'egg';
+                egg.textContent = '🥚';
+                egg.dataset.position = position;
+                
+                // Позиционирование яйца
+                switch(position) {
+                    case 'left-top':
+                        egg.style.left = '60px';
+                        egg.style.top = '90px';
+                        break;
+                    case 'left-bottom':
+                        egg.style.left = '60px';
+                        egg.style.top = '190px';
+                        break;
+                    case 'right-top':
+                        egg.style.right = '60px';
+                        egg.style.top = '90px';
+                        break;
+                    case 'right-bottom':
+                        egg.style.right = '60px';
+                        egg.style.top = '190px';
+                        break;
+                }
+                
+                egg.style.animationDuration = this.eggSpeed + 'ms';
+                document.getElementById('gameArea').appendChild(egg);
+                
+                // Проверка поймано ли яйцо
+                const checkInterval = setInterval(() => {
+                    if (!egg.parentNode) {
+                        clearInterval(checkInterval);
+                        return;
+                    }
+                    
+                    const eggRect = egg.getBoundingClientRect();
+                    const basketRect = document.getElementById('basket').getBoundingClientRect();
+                    
+                    // Проверка попадания в корзину
+                    if (eggRect.bottom >= basketRect.top && 
+                        eggRect.bottom <= basketRect.bottom &&
+                        egg.dataset.position === this.wolfPosition) {
+                        this.catchEgg(egg);
+                        clearInterval(checkInterval);
+                    }
+                    // Яйцо упало
+                    else if (eggRect.bottom >= document.getElementById('gameArea').getBoundingClientRect().bottom - 10) {
+                        this.missEgg(egg);
+                        clearInterval(checkInterval);
+                    }
+                }, 50);
+                
+                // Увеличиваем сложность
+                if (this.score > 0 && this.score % 10 === 0 && this.score / 10 > this.level) {
+                    this.level++;
+                    this.eggSpeed = Math.max(1000, this.eggSpeed - 100);
+                    this.spawnRate = Math.max(1000, this.spawnRate - 100);
+                }
+                
+                // Следующее яйцо
+                setTimeout(() => this.spawnEgg(), this.spawnRate);
+            },
+            
+            catchEgg(egg) {
+                this.score++;
+                this.updateUI();
+                
+                // Эффект поимки
+                const effect = document.createElement('div');
+                effect.className = 'catch-effect';
+                effect.textContent = '+1';
+                effect.style.left = egg.style.left || egg.style.right;
+                effect.style.bottom = '100px';
+                document.getElementById('gameArea').appendChild(effect);
+                
+                egg.remove();
+                
+                setTimeout(() => effect.remove(), 500);
+                
+                // Звуковой эффект (визуальный)
+                document.getElementById('basket').style.transform = 'scale(1.2)';
+                setTimeout(() => {
+                    document.getElementById('basket').style.transform = 'scale(1)';
+                }, 200);
+            },
+            
+            missEgg(egg) {
+                const brokenEgg = document.createElement('div');
+                brokenEgg.className = 'broken-egg';
+                brokenEgg.textContent = '💔';
+                brokenEgg.style.left = egg.style.left || egg.style.right;
+                brokenEgg.style.bottom = '10px';
+                document.getElementById('gameArea').appendChild(brokenEgg);
+                
+                egg.remove();
+                
+                setTimeout(() => brokenEgg.remove(), 1000);
+                
+                this.lives--;
+                this.updateUI();
+                
+                if (this.lives <= 0) {
+                    this.gameOver();
+                }
+            },
+            
+            updateUI() {
+                document.getElementById('scoreValue').textContent = this.score;
+                const hearts = '❤️'.repeat(Math.max(0, this.lives)) + '💔'.repeat(Math.max(0, 3 - this.lives));
+                document.getElementById('lives').textContent = hearts;
+            },
+            
+            gameOver() {
+                this.isPlaying = false;
+                
+                if (this.score > this.highScore) {
+                    this.highScore = this.score;
+                    localStorage.setItem('wolfHighScore', this.highScore);
+                }
+                
+                document.getElementById('finalScoreValue').textContent = this.score;
+                document.getElementById('finalHighScore').textContent = this.highScore;
+                document.getElementById('gameOver').style.display = 'flex';
+                
+                // Удаляем все яйца
+                document.querySelectorAll('.egg').forEach(egg => egg.remove());
+            }
+        };
+        
+        // Инициализация игры
+        game.init();
+        
+        // Предотвращение зума на мобильных
+        document.addEventListener('touchstart', function(e) {
+            if (e.touches.length > 1) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+        
+        // Telegram Web App API
+        if (window.Telegram && window.Telegram.WebApp) {
+            const tg = window.Telegram.WebApp;
+            tg.ready();
+            tg.expand();
+            
+            // Настройка темы под Telegram
+            if (tg.themeParams.bg_color) {
+                document.body.style.background = tg.themeParams.bg_color;
+            }
+        }
+    </script>
+</body>
+</html>
